@@ -1,1 +1,250 @@
-<h1>test</h1>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Factura Dinámica Tailwind - Para Impresión y Compartir</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Importante para móvil -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Incluir html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        /* --- Estilos Base (Pantalla y Print) --- */
+        td { padding: 0.2rem 0.4rem; overflow-wrap: break-word; word-wrap: break-word; hyphens: auto; word-break: break-all; font-size: 0.55rem; vertical-align: top; }
+        th { padding-bottom: 0.5rem; font-size: 0.75rem; font-weight: 500; vertical-align: bottom; }
+        .align-left { text-align: left; }
+        .align-right { text-align: right; }
+        .th-align-left { text-align: left; }
+        .th-align-right { text-align: right; }
+
+        /* --- Estilos Específicos para Impresión --- */
+        @media print {
+            body { margin: 0 !important; padding: 0 !important; background-color: white !important; min-width: initial !important; }
+            body > *:not(#invoice-container) { display: none !important; }
+            #invoice-container { margin: 0 !important; padding: 0.5rem !important; border: none !important; box-shadow: none !important; width: 80mm !important; position: absolute !important; left: 0 !important; top: 0 !important; background-color: white !important; /* Fondo blanco explícito para captura */}
+            table, thead, tbody, tr, th, td { border-collapse: collapse !important; border-spacing: 0 !important; }
+            tr { border: none !important; }
+            /* Ocultar el botón al imprimir */
+            #share-button-container { display: none !important; }
+        }
+
+        /* Estilos para el botón y mensajes */
+        #share-button-container { margin-top: 1rem; text-align: center; }
+        #status-message { margin-top: 0.5rem; font-size: 0.8rem; color: #555; min-height: 1.2em; } /* Espacio para mensaje */
+
+    </style>
+</head>
+<body>
+
+<!-- Contenedor de la factura -->
+<div id="invoice-container" class="w-[80mm] bg-white p-6 mx-auto my-4 border shadow-lg">
+    <!-- Contenido de la factura (igual que antes) -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-2">
+            <!-- 
+            <img src="sinapsis LOGO 3  svglkl.svg" alt="Logo" width="40" height="40" style="aspect-ratio: 50 / 40; object-fit: cover;" class="rounded-full"/>
+        -->
+        </div>
+        <div class="text-right text-sm text-muted-foreground">
+            <p id="factura">Factura #123</p>
+            <p id="fecha">Fecha: 2023-10-27</p>
+            <p id="vence">Vence: 2023-11-26</p>
+        </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4 mb-6">
+        <div>
+            <h2 class="text-sm font-medium mb-1">Para:</h2>
+            <p class="text-sm text-muted-foreground" id="para">Cliente Ejemplo<br>Calle Falsa 123<br>Ciudad, País</p>
+        </div>
+        <div>
+            <h2 class="text-sm font-medium mb-1">De:</h2>
+            <p class="text-sm text-muted-foreground">Acme Inc.<br>456 Oak Rd.<br>Somewhere, NY 54321<br>(555) 555-5555<br>info@acme.com</p>
+        </div>
+    </div>
+    <table id="miTabla" class="w-full mb-6">
+        <thead></thead>
+        <tbody class="text-right"></tbody>
+    </table>
+    <div class="grid grid-cols-2 gap-4 mb-6">
+        <div>
+            <h2 class="text-sm font-medium mb-1">Nota:</h2>
+            <p class="text-sm text-muted-foreground" id="nota">Gracias por su compra.</p>
+        </div>
+        <div class="text-right">
+            <div class="flex justify-end items-center gap-2"><p class="text-sm font-medium">Subtotal:</p><p class="text-sm text-muted-foreground" id="subtotal">$0.00</p></div>
+            <div class="flex justify-end items-center gap-2"><p class="text-sm font-medium">IVA Monto:</p><p class="text-sm text-muted-foreground" id="ivatotal">$0.00</p></div>
+            <div class="flex justify-end items-center gap-2 border-t border-muted pt-2"><p class="text-sm font-medium">Total:</p><p class="text-sm font-bold" id="total">$0.00</p></div>
+        </div>
+    </div>
+</div> <!-- Fin de #invoice-container -->
+
+<!-- Contenedor del Botón (fuera del div de la factura) -->
+<div id="share-button-container" class="w-[80mm] mx-auto text-center py-4">
+    <button id="shareButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out">
+        Compartir Factura como Imagen
+    </button>
+    <div id="status-message"></div> <!-- Para mostrar mensajes al usuario -->
+</div>
+
+<script>
+  // Función para generar la tabla (igual que antes)
+  function generarTablaDesdeURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const columnas = urlParams.getAll('columna');
+    const tabla = document.getElementById('miTabla');
+    if (!tabla) { console.error("Tabla no encontrada"); return; }
+    const encabezadoContainer = tabla.querySelector('thead');
+    const cuerpoContainer = tabla.querySelector('tbody');
+    if (!encabezadoContainer || !cuerpoContainer) { console.error("Thead o Tbody no encontrado"); return; }
+
+    encabezadoContainer.innerHTML = '';
+    cuerpoContainer.innerHTML = '';
+
+    if (columnas.length === 0) {
+        cuerpoContainer.innerHTML = '<tr><td colspan="1" class="text-center py-4">No hay columnas definidas.</td></tr>';
+        return;
+    }
+
+    const filaEncabezado = document.createElement('tr');
+    filaEncabezado.classList.add('border-b', 'border-gray-300');
+    columnas.forEach(nombreColumna => {
+      const th = document.createElement('th');
+      th.textContent = nombreColumna;
+      th.classList.add(['Cantidad', 'Precio', 'Monto', 'IVA', 'Subtotal', 'Total'].includes(nombreColumna) ? 'th-align-right' : 'th-align-left');
+      filaEncabezado.appendChild(th);
+    });
+    encabezadoContainer.appendChild(filaEncabezado);
+
+    const datosPorColumna = {};
+    let numeroFilas = 0;
+    columnas.forEach((nombreColumna, index) => {
+        const datosString = urlParams.get(nombreColumna);
+        datosPorColumna[nombreColumna] = datosString ? datosString.split(',') : [];
+        if (index === 0) numeroFilas = datosPorColumna[nombreColumna].length;
+        // Aquí podrías añadir validación de longitud si quieres
+    });
+
+     if (numeroFilas === 0 && columnas.length > 0) {
+        cuerpoContainer.innerHTML = `<tr><td colspan="${columnas.length}" class="text-center py-4">No hay datos para mostrar.</td></tr>`;
+        return;
+     }
+
+    let subtotalCalculado = 0;
+    for (let i = 0; i < numeroFilas; i++) {
+      const filaCuerpo = document.createElement('tr');
+      columnas.forEach(nombreColumna => {
+        const td = document.createElement('td');
+        const datoCelda = datosPorColumna[nombreColumna]?.[i] ?? '';
+        td.textContent = datoCelda;
+        if (nombreColumna === 'Monto') {
+            const valorMonto = parseFloat(datoCelda.replace(/[^0-9.-]+/g,""));
+             if (!isNaN(valorMonto)) subtotalCalculado += valorMonto;
+        }
+        td.classList.add(['Cantidad', 'Precio', 'Monto', 'IVA', 'Subtotal', 'Total'].includes(nombreColumna) ? 'align-right' : 'align-left');
+        filaCuerpo.appendChild(td);
+      });
+      cuerpoContainer.appendChild(filaCuerpo);
+    }
+
+    // Actualizar totales (ejemplo básico)
+    const elSubtotal = document.getElementById('subtotal');
+    const elTotal = document.getElementById('total');
+    if (elSubtotal) elSubtotal.textContent = `$${subtotalCalculado.toFixed(2)}`;
+    // Aquí la lógica de IVA y Total...
+    if (elTotal) elTotal.textContent = `$${(subtotalCalculado * 1.12).toFixed(2)}`; // Ejemplo 12% IVA
+  }
+
+  // --- Lógica para Compartir ---
+  const shareButton = document.getElementById('shareButton');
+  const invoiceContainer = document.getElementById('invoice-container');
+  const statusMessage = document.getElementById('status-message');
+
+  if (shareButton && invoiceContainer && statusMessage) {
+    shareButton.addEventListener('click', async () => {
+      statusMessage.textContent = 'Generando imagen...'; // Feedback inicial
+      shareButton.disabled = true; // Deshabilitar botón mientras procesa
+
+      try {
+        // Opciones para html2canvas (puedes ajustar scale para mejor resolución)
+        const canvasOptions = {
+            scale: 2, // Captura a 2x resolución para mayor nitidez
+            useCORS: true, // Necesario si la imagen del logo viene de otro dominio
+            backgroundColor: '#ffffff', // Asegura fondo blanco
+             // Intentar que use el ancho fijo, no el automático del navegador
+             width: invoiceContainer.offsetWidth,
+             windowWidth: invoiceContainer.offsetWidth, // Forzar ancho
+        };
+
+        const canvas = await html2canvas(invoiceContainer, canvasOptions);
+
+        // Convertir Canvas a Blob
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+              throw new Error("No se pudo crear el Blob de la imagen.");
+          }
+
+          // Crear objeto File desde el Blob
+          const fileName = `factura-${Date.now()}.png`; // Nombre de archivo único
+          const imageFile = new File([blob], fileName, { type: 'image/png' });
+
+          // Comprobar si Web Share API (para archivos) está disponible
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [imageFile] })) {
+            statusMessage.textContent = 'Abriendo diálogo para compartir...';
+            try {
+              await navigator.share({
+                files: [imageFile],
+                title: 'Factura Generada', // Título opcional
+                text: 'Adjunto la factura generada.', // Texto opcional
+              });
+              statusMessage.textContent = '¡Compartido exitosamente!';
+            } catch (err) {
+              if (err.name !== 'AbortError') { // Ignorar si el usuario cancela
+                console.error('Error al compartir:', err);
+                statusMessage.textContent = `Error al compartir: ${err.message}`;
+              } else {
+                 statusMessage.textContent = 'Compartir cancelado.';
+              }
+            }
+          } else {
+            // Fallback: Ofrecer descarga si Web Share no está disponible o no soporta archivos
+            statusMessage.textContent = 'Compartir no soportado, descargando imagen...';
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob); // Crear URL temporal para el Blob
+            link.download = fileName;
+            document.body.appendChild(link); // Necesario para Firefox
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href); // Liberar memoria
+             statusMessage.textContent = 'Imagen descargada.';
+          }
+        }, 'image/png'); // Especifica el tipo de imagen
+
+      } catch (error) {
+        console.error('Error al generar la imagen:', error);
+        statusMessage.textContent = `Error al generar imagen: ${error.message}`;
+      } finally {
+        // Habilitar el botón de nuevo después de un breve retraso
+         setTimeout(() => {
+            shareButton.disabled = false;
+            // Opcional: limpiar el mensaje después de un tiempo
+            // setTimeout(() => { statusMessage.textContent = ''; }, 5000);
+         }, 1000);
+      }
+    });
+  } else {
+      console.error("No se encontró el botón de compartir, el contenedor de factura o el área de mensajes.");
+  }
+
+  // Ejecutar la generación de la tabla al cargar
+  window.onload = () => {
+      generarTablaDesdeURL();
+      // Opcional: Ocultar el botón si Web Share no está disponible en absoluto
+      // if (!navigator.share) {
+      //    const btnContainer = document.getElementById('share-button-container');
+      //    if(btnContainer) btnContainer.style.display = 'none';
+      // }
+  };
+
+</script>
+
+</body>
+</html>
