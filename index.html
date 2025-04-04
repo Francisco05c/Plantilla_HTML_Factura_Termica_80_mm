@@ -14,18 +14,12 @@
         .align-right { text-align: right; }
         .th-align-left { text-align: left; }
         .th-align-right { text-align: right; }
-        .logo-hidden { display: none !important; }
+        .logo-hidden { display: none !important; } /* display:none está bien para el logo */
 
-        /* Ocultar líneas individuales (elimina del flujo) */
+        /* Clase genérica para ocultar secciones SIN afectar el layout */
         .section-hidden {
-             display: none !important;
+             visibility: hidden !important; /* <-- CAMBIO AQUÍ */
         }
-        /* Ocultar secciones preservando espacio (visibilidad) */
-        .content-invisible {
-            visibility: hidden;
-            min-height: 1px; /* Asegura que tenga algo de altura mínima si el contenido colapsa */
-        }
-
 
         /* --- Estilos Específicos para Impresión --- */
         @media print {
@@ -36,50 +30,45 @@
             tr { border: none !important; }
             #share-button-container { display: none !important; }
             #subtotal-line, #iva-monto-line, #iva-percent-line, #total-line { display: flex !important; }
-            /* .content-invisible seguirá oculto pero preservando espacio */
+             /* .section-hidden con visibility:hidden funciona bien en print */
         }
         #share-button-container { margin-top: 1rem; text-align: center; }
         #status-message { margin-top: 0.5rem; font-size: 0.8rem; color: #555; min-height: 1.2em; }
-        #subtotal-line, #iva-monto-line, #iva-percent-line { display: none; } /* Estos usan display:none desde JS */
+        #subtotal-line, #iva-monto-line, #iva-percent-line { display: none; } /* display:none está bien para estas líneas individuales */
     </style>
 </head>
 <body>
 
-<!-- Lista de Parámetros (Sin cambios) -->
-<!-- ... -->
+<!--
+    Lista de Parámetros Esperados en la URL: (Sin cambios)
+    ...
+-->
 
 <div id="invoice-container" class="w-[80mm] bg-white p-6 mx-auto my-4 border shadow-lg">
-    <!-- Cabecera con logos y datos factura/fecha/hora (Sin cambios estructurales) -->
+    <!-- Contenido de la factura (sin cambios estructurales) -->
     <div class="flex items-center justify-between mb-6">
+         <!-- Logos -->
         <div class="flex items-center gap-2">
-            <img id="invoice-logo" src="https://lh3.googleusercontent.com/JonounsL_dW5IYICJg3ZFZdKyvGtd7jxDBSeFBnia5a7yGnL9mF4FHf6WA5fEbpVt7r8aDydBCPOLEyUiTVaHHjp2w=s80" alt="Logo Principal" width="40" height="40" style="aspect-ratio: 50 / 40; object-fit: cover;" class="rounded-full"/>
+            <img id="invoice-logo" src="sinapsis LOGO 3  svglkl.svg" alt="Logo Principal" width="40" height="40" style="aspect-ratio: 50 / 40; object-fit: cover;" class="rounded-full"/>
             <img id="invoice-logo-2" src="" alt="Logo Secundario" width="80" height="40" style="object-fit: cover;" class="logo-hidden"/>
         </div>
+        <!-- Info Derecha -->
         <div class="text-right text-sm text-muted-foreground">
             <p id="factura-line">Factura: <span id="factura-val">#123</span></p>
             <p id="fecha-line">Fecha: <span id="fecha-val">2023-10-27</span></p>
             <p id="hora-line">Hora: <span id="hora-val">15:30</span></p>
         </div>
     </div>
-    <!-- Secciones Para/De (Sin cambios estructurales) -->
+    <!-- Secciones Para/De -->
     <div class="grid grid-cols-2 gap-4 mb-6">
-        <div id="para-section">
-            <h2 class="text-sm font-medium mb-1">Para:</h2>
-            <p class="text-sm text-muted-foreground" id="para-val">Cliente Ejemplo<br>Calle Falsa 123<br>Ciudad, País</p>
-        </div>
-        <div id="de-section">
-            <h2 class="text-sm font-medium mb-1">De:</h2>
-            <p class="text-sm text-muted-foreground" id="de-val">Acme Inc.<br>456 Oak Rd.<br>Somewhere, NY 54321<br>(555) 555-5555<br>info@acme.com</p>
-        </div>
+        <div id="para-section"><h2 class="text-sm font-medium mb-1">Para:</h2><p class="text-sm text-muted-foreground" id="para-val">Cliente Ejemplo<br>Calle Falsa 123<br>Ciudad, País</p></div>
+        <div id="de-section"><h2 class="text-sm font-medium mb-1">De:</h2><p class="text-sm text-muted-foreground" id="de-val">Acme Inc.<br>456 Oak Rd.<br>Somewhere, NY 54321<br>(555) 555-5555<br>info@acme.com</p></div>
     </div>
-    <!-- Tabla (Sin cambios estructurales) -->
+    <!-- Tabla -->
     <table id="miTabla" class="w-full mb-6"><thead></thead><tbody class="text-right"></tbody></table>
-    <!-- Secciones Nota/Totales (Sin cambios estructurales) -->
+    <!-- Secciones Nota/Totales -->
     <div class="grid grid-cols-2 gap-4 mb-6">
-        <div id="nota-section">
-            <h2 class="text-sm font-medium mb-1">Nota:</h2>
-            <p class="text-sm text-muted-foreground" id="nota-val">Gracias por su compra.</p>
-        </div>
+        <div id="nota-section"><h2 class="text-sm font-medium mb-1">Nota:</h2><p class="text-sm text-muted-foreground" id="nota-val">Gracias por su compra.</p></div>
         <div class="text-right">
             <div id="subtotal-line" class="flex justify-end items-center gap-2"><p class="text-sm font-medium">Subtotal:</p><p class="text-sm text-muted-foreground" id="subtotal"></p></div>
             <div id="iva-percent-line" class="flex justify-end items-center gap-2"><p class="text-sm font-medium">IVA:</p><p class="text-sm text-muted-foreground" id="iva-percent-val"></p></div>
@@ -89,97 +78,61 @@
     </div>
 </div> <!-- Fin de #invoice-container -->
 
-<!-- Contenedor del Botón (Sin cambios) -->
-<!-- ... -->
+<!-- Contenedor del Botón -->
+<div id="share-button-container" class="w-[80mm] mx-auto text-center py-4">
+    <button id="shareButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out">
+        Compartir Factura como Imagen
+    </button>
+    <div id="status-message"></div>
+</div>
 
 <script>
-  function obtenerParametro(nombre) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(nombre);
-  }
+  // --- Funciones Helper (obtenerParametro, actualizarContenidoOSeccion) sin cambios ---
+   function obtenerParametro(nombre) { const urlParams = new URLSearchParams(window.location.search); return urlParams.get(nombre); }
+   function actualizarContenidoOSeccion(paramValue, valueElement, containerElement, labelPrefix = "") { if (paramValue !== null) { const trimmedValue = paramValue.trim(); if (trimmedValue === "") { if (containerElement) containerElement.classList.add('section-hidden'); else if (valueElement) valueElement.classList.add('section-hidden'); } else { if (valueElement) { valueElement.textContent = labelPrefix + trimmedValue; valueElement.classList.remove('section-hidden'); } if (containerElement) containerElement.classList.remove('section-hidden'); } } else { if (valueElement) valueElement.classList.remove('section-hidden'); if (containerElement) containerElement.classList.remove('section-hidden'); } }
 
-  // Helper modificado para aceptar modo 'display' o 'visibility'
-  function actualizarContenidoOSeccion(paramValue, valueElement, containerElement, mode = 'display', labelPrefix = "") {
-      const hideClass = mode === 'visibility' ? 'content-invisible' : 'section-hidden';
-      const showClass = mode === 'visibility' ? 'content-invisible' : 'section-hidden'; // Clase a quitar
-
-      if (paramValue !== null) { // Parámetro existe
-          const trimmedValue = paramValue.trim();
-          if (trimmedValue === "") { // Vacío -> Ocultar contenedor
-              if (containerElement) {
-                  containerElement.classList.add(hideClass);
-                  containerElement.classList.remove(showClass === 'content-invisible' ? 'section-hidden' : 'content-invisible'); // Limpiar otra clase si existe
-              }
-              // Opcional: También ocultar el valor interno por si acaso
-              if (valueElement) valueElement.style.visibility = 'hidden';
-
-          } else { // Con valor -> Actualizar y mostrar
-              if (valueElement) {
-                  valueElement.textContent = labelPrefix + trimmedValue;
-                   // Asegurarse de que el valor sea visible si el contenedor lo es
-                  valueElement.style.visibility = 'visible';
-                  // valueElement.innerHTML = labelPrefix + trimmedValue.replace(/\\n|%0A/g, '<br>'); // Si necesitas <br>
-              }
-              if (containerElement) {
-                  containerElement.classList.remove(hideClass);
-                  containerElement.classList.remove(showClass === 'content-invisible' ? 'section-hidden' : 'content-invisible'); // Limpiar
-              }
-          }
-      } else { // Parámetro no existe -> Asegurar visibilidad (para default)
-           if (valueElement) valueElement.style.visibility = 'visible';
-           if (containerElement) {
-               containerElement.classList.remove(hideClass);
-               containerElement.classList.remove(showClass === 'content-invisible' ? 'section-hidden' : 'content-invisible'); // Limpiar
-           }
-      }
-  }
-
-
+  // --- Función Principal (generarYActualizarFactura) sin cambios en su lógica ---
   function generarYActualizarFactura() {
-    // --- 0. Obtener elementos básicos ---
-    // ... (obtención de elementos sin cambios) ...
-    const columnas = new URLSearchParams(window.location.search).getAll('columna'); const tabla = document.getElementById('miTabla'); const logo1ImgElement = document.getElementById('invoice-logo'); const logo2ImgElement = document.getElementById('invoice-logo-2'); const facturaLineEl = document.getElementById('factura-line'); const facturaValEl = document.getElementById('factura-val'); const fechaLineEl = document.getElementById('fecha-line'); const fechaValEl = document.getElementById('fecha-val'); const horaLineEl = document.getElementById('hora-line'); const horaValEl = document.getElementById('hora-val'); const paraSectionEl = document.getElementById('para-section'); const paraValEl = document.getElementById('para-val'); const deSectionEl = document.getElementById('de-section'); const deValEl = document.getElementById('de-val'); const notaSectionEl = document.getElementById('nota-section'); const notaValEl = document.getElementById('nota-val');
+    // ... (obtención de elementos) ...
+    const columnas = new URLSearchParams(window.location.search).getAll('columna');
+    const tabla = document.getElementById('miTabla');
+    const logo1ImgElement = document.getElementById('invoice-logo');
+    const logo2ImgElement = document.getElementById('invoice-logo-2');
+    const facturaLineEl = document.getElementById('factura-line');
+    const facturaValEl = document.getElementById('factura-val');
+    const fechaLineEl = document.getElementById('fecha-line');
+    const fechaValEl = document.getElementById('fecha-val');
+    const horaLineEl = document.getElementById('hora-line');
+    const horaValEl = document.getElementById('hora-val');
+    const paraSectionEl = document.getElementById('para-section');
+    const paraValEl = document.getElementById('para-val');
+    const deSectionEl = document.getElementById('de-section');
+    const deValEl = document.getElementById('de-val');
+    const notaSectionEl = document.getElementById('nota-section');
+    const notaValEl = document.getElementById('nota-val');
+    if (!tabla) { console.error("Tabla no encontrada"); return; } const encabezadoContainer = tabla.querySelector('thead'); const cuerpoContainer = tabla.querySelector('tbody'); if (!encabezadoContainer || !cuerpoContainer) { console.error("Thead o Tbody no encontrado"); return; }
 
-    // --- Validaciones iniciales ---
-    // ... (validaciones sin cambios) ...
-    if (!tabla) { console.error("Tabla no encontrada"); return; } const encabezadoContainer = tabla.querySelector('thead'); const cuerpoContainer = tabla.querySelector('tbody'); if (!encabezadoContainer || !cuerpoContainer) { console.error("Thead o Tbody no encontrado"); return; } if (!fechaLineEl) console.warn("Elemento fecha-line no encontrado.");
+    // ... (actualización de logos) ...
+    const paramLogo1 = obtenerParametro('Logo1'); if (logo1ImgElement) { if (paramLogo1 !== null) { const logo1Src = paramLogo1.trim(); if (logo1Src === "") { logo1ImgElement.classList.add('logo-hidden'); logo1ImgElement.alt = "Logo 1 oculto"; logo1ImgElement.src = ""; } else { logo1ImgElement.src = logo1Src; logo1ImgElement.classList.remove('logo-hidden'); logo1ImgElement.alt = "Logo Principal"; } } else { logo1ImgElement.classList.remove('logo-hidden'); logo1ImgElement.alt = "Logo Principal por defecto"; } }
+    const paramLogo2 = obtenerParametro('Logo2'); if (logo2ImgElement) { const logo2Src = paramLogo2 ? paramLogo2.trim() : null; if (logo2Src) { logo2ImgElement.src = logo2Src; logo2ImgElement.classList.remove('logo-hidden'); logo2ImgElement.alt = "Logo Secundario"; } else { logo2ImgElement.classList.add('logo-hidden'); logo2ImgElement.alt = "Logo 2 no proporcionado u oculto"; logo2ImgElement.src = ""; } }
 
-    // --- A. Actualizar Logos ---
-    // ... (lógica logos sin cambios) ...
-    const paramLogo1 = obtenerParametro('Logo1'); if (logo1ImgElement) { if (paramLogo1 !== null) { const logo1Src = paramLogo1.trim(); if (logo1Src === "") { logo1ImgElement.classList.add('logo-hidden'); logo1ImgElement.alt = "Logo 1 oculto"; logo1ImgElement.src = ""; } else { logo1ImgElement.src = logo1Src; logo1ImgElement.classList.remove('logo-hidden'); logo1ImgElement.alt = "Logo Principal"; } } else { logo1ImgElement.classList.remove('logo-hidden'); logo1ImgElement.alt = "Logo Principal por defecto"; } } const paramLogo2 = obtenerParametro('Logo2'); if (logo2ImgElement) { const logo2Src = paramLogo2 ? paramLogo2.trim() : null; if (logo2Src) { logo2ImgElement.src = logo2Src; logo2ImgElement.classList.remove('logo-hidden'); logo2ImgElement.alt = "Logo Secundario"; } else { logo2ImgElement.classList.add('logo-hidden'); logo2ImgElement.alt = "Logo 2 no proporcionado u oculto"; logo2ImgElement.src = ""; } }
+    // ... (actualización de contenido usando el helper, que ahora aplica .section-hidden con visibility) ...
+    const paramFactura = obtenerParametro('Factura'); const paramFecha = obtenerParametro('Fecha'); const paramHora = obtenerParametro('Hora'); const paramPara = obtenerParametro('Para'); const paramDe = obtenerParametro('De'); const paramNota = obtenerParametro('Nota');
+    actualizarContenidoOSeccion(paramFactura, facturaValEl, facturaLineEl);
+    actualizarContenidoOSeccion(paramFecha, fechaValEl, fechaLineEl);
+    actualizarContenidoOSeccion(paramHora, horaValEl, horaLineEl);
+    actualizarContenidoOSeccion(paramPara, paraValEl, paraSectionEl);
+    actualizarContenidoOSeccion(paramDe, deValEl, deSectionEl);
+    actualizarContenidoOSeccion(paramNota, notaValEl, notaSectionEl);
 
-    // --- B. Actualizar Contenido de Texto/Secciones ---
-    const paramFactura = obtenerParametro('Factura');
-    const paramFecha = obtenerParametro('Fecha');
-    const paramHora = obtenerParametro('Hora');
-    const paramPara = obtenerParametro('Para');
-    const paramDe = obtenerParametro('De');
-    const paramNota = obtenerParametro('Nota');
-
-    // Usar el helper especificando el modo
-    // 'display' para líneas simples (Factura, Fecha, Hora)
-    actualizarContenidoOSeccion(paramFactura, facturaValEl, facturaLineEl, 'display');
-    actualizarContenidoOSeccion(paramFecha, fechaValEl, fechaLineEl, 'display');
-    actualizarContenidoOSeccion(paramHora, horaValEl, horaLineEl, 'display');
-    // 'visibility' para secciones en grid (Para, De, Nota)
-    actualizarContenidoOSeccion(paramPara, paraValEl, paraSectionEl, 'visibility');
-    actualizarContenidoOSeccion(paramDe, deValEl, deSectionEl, 'visibility');
-    actualizarContenidoOSeccion(paramNota, notaValEl, notaSectionEl, 'visibility');
-
-    // --- 1. Limpiar Tabla ---
-    encabezadoContainer.innerHTML = '';
-    cuerpoContainer.innerHTML = '';
-
-    // --- Resto de la lógica (Tabla, Totales) sin cambios ---
-    // ... (código idéntico para columnas, filas, totales) ...
-    if (columnas.length === 0) { /* ... */ cuerpoContainer.innerHTML = '<tr><td colspan="1" class="text-center py-4">No hay columnas definidas.</td></tr>'; document.getElementById('subtotal-line').style.display = 'none'; document.getElementById('iva-monto-line').style.display = 'none'; document.getElementById('iva-percent-line').style.display = 'none'; document.getElementById('total-line').style.display = 'none'; return; } const filaEncabezado = document.createElement('tr'); filaEncabezado.classList.add('border-b', 'border-gray-300'); columnas.forEach(nombreColumna => { const th = document.createElement('th'); th.textContent = nombreColumna; th.classList.add(['Cantidad', 'Precio', 'Monto', 'IVA', 'Subtotal', 'Total'].includes(nombreColumna) ? 'th-align-right' : 'th-align-left'); filaEncabezado.appendChild(th); }); encabezadoContainer.appendChild(filaEncabezado); const datosPorColumna = {}; let numeroFilas = 0; columnas.forEach((nombreColumna, index) => { const datosString = obtenerParametro(nombreColumna); datosPorColumna[nombreColumna] = datosString ? datosString.split(',') : []; if (index === 0) numeroFilas = datosPorColumna[nombreColumna].length; }); if (numeroFilas === 0 && columnas.length > 0) { /* ... */ cuerpoContainer.innerHTML = `<tr><td colspan="${columnas.length}" class="text-center py-4">No hay datos para mostrar.</td></tr>`; document.getElementById('subtotal-line').style.display = 'none'; document.getElementById('iva-monto-line').style.display = 'none'; document.getElementById('iva-percent-line').style.display = 'none'; document.getElementById('total-line').style.display = 'none'; return; } let sumaColumnaMonto = 0; for (let i = 0; i < numeroFilas; i++) { const filaCuerpo = document.createElement('tr'); columnas.forEach(nombreColumna => { const td = document.createElement('td'); const datoCelda = datosPorColumna[nombreColumna]?.[i] ?? ''; td.textContent = datoCelda; if (nombreColumna.toLowerCase() === 'monto') { const valorNumerico = parseFloat(String(datoCelda).replace(/[^0-9.-]+/g,"")); if (!isNaN(valorNumerico)) { sumaColumnaMonto += valorNumerico; } else { console.warn(`Valor no numérico en Monto, fila ${i}: ${datoCelda}`); } } td.classList.add(['Cantidad', 'Precio', 'Monto', 'IVA', 'Subtotal', 'Total'].includes(nombreColumna) ? 'align-right' : 'align-left'); filaCuerpo.appendChild(td); }); cuerpoContainer.appendChild(filaCuerpo); } const paramSubtotal = obtenerParametro('Subtotal'); const paramIVAMonto = obtenerParametro('IVAMonto'); const paramIVALine = obtenerParametro('IVALine'); const paramTotal = obtenerParametro('Total'); const subtotalLine = document.getElementById('subtotal-line'); const ivaMontoLine = document.getElementById('iva-monto-line'); const ivaPercentLine = document.getElementById('iva-percent-line'); const totalLine = document.getElementById('total-line'); const subtotalValEl = document.getElementById('subtotal'); const ivaMontoValEl = document.getElementById('ivatotal'); const ivaPercentValEl = document.getElementById('iva-percent-val'); const totalValEl = document.getElementById('total'); if (paramSubtotal !== null) { subtotalValEl.textContent = paramSubtotal; subtotalLine.style.display = 'flex'; } else { subtotalLine.style.display = 'none'; } if (paramIVAMonto !== null) { ivaMontoValEl.textContent = paramIVAMonto; ivaMontoLine.style.display = 'flex'; } else { ivaMontoLine.style.display = 'none'; } if (paramIVALine !== null) { ivaPercentValEl.textContent = paramIVALine; ivaPercentLine.style.display = 'flex'; } else { ivaPercentLine.style.display = 'none'; } if (paramTotal !== null) { totalValEl.textContent = paramTotal; totalLine.style.display = 'flex'; } else { totalValEl.textContent = `$${sumaColumnaMonto.toFixed(2)}`; totalLine.style.display = 'flex'; }
+    // ... (resto de lógica de tabla y totales sin cambios) ...
+    encabezadoContainer.innerHTML = ''; cuerpoContainer.innerHTML = ''; if (columnas.length === 0) { /* ... */ cuerpoContainer.innerHTML = '<tr><td colspan="1" class="text-center py-4">No hay columnas definidas.</td></tr>'; document.getElementById('subtotal-line').style.display = 'none'; document.getElementById('iva-monto-line').style.display = 'none'; document.getElementById('iva-percent-line').style.display = 'none'; document.getElementById('total-line').style.display = 'none'; return; } const filaEncabezado = document.createElement('tr'); filaEncabezado.classList.add('border-b', 'border-gray-300'); columnas.forEach(nombreColumna => { const th = document.createElement('th'); th.textContent = nombreColumna; th.classList.add(['Cantidad', 'Precio', 'Monto', 'IVA', 'Subtotal', 'Total'].includes(nombreColumna) ? 'th-align-right' : 'th-align-left'); filaEncabezado.appendChild(th); }); encabezadoContainer.appendChild(filaEncabezado); const datosPorColumna = {}; let numeroFilas = 0; columnas.forEach((nombreColumna, index) => { const datosString = obtenerParametro(nombreColumna); datosPorColumna[nombreColumna] = datosString ? datosString.split(',') : []; if (index === 0) numeroFilas = datosPorColumna[nombreColumna].length; }); if (numeroFilas === 0 && columnas.length > 0) { /* ... */ cuerpoContainer.innerHTML = `<tr><td colspan="${columnas.length}" class="text-center py-4">No hay datos para mostrar.</td></tr>`; document.getElementById('subtotal-line').style.display = 'none'; document.getElementById('iva-monto-line').style.display = 'none'; document.getElementById('iva-percent-line').style.display = 'none'; document.getElementById('total-line').style.display = 'none'; return; } let sumaColumnaMonto = 0; for (let i = 0; i < numeroFilas; i++) { const filaCuerpo = document.createElement('tr'); columnas.forEach(nombreColumna => { const td = document.createElement('td'); const datoCelda = datosPorColumna[nombreColumna]?.[i] ?? ''; td.textContent = datoCelda; if (nombreColumna.toLowerCase() === 'monto') { const valorNumerico = parseFloat(String(datoCelda).replace(/[^0-9.-]+/g,"")); if (!isNaN(valorNumerico)) { sumaColumnaMonto += valorNumerico; } else { console.warn(`Valor no numérico en Monto, fila ${i}: ${datoCelda}`); } } td.classList.add(['Cantidad', 'Precio', 'Monto', 'IVA', 'Subtotal', 'Total'].includes(nombreColumna) ? 'align-right' : 'align-left'); filaCuerpo.appendChild(td); }); cuerpoContainer.appendChild(filaCuerpo); } const paramSubtotal = obtenerParametro('Subtotal'); const paramIVAMonto = obtenerParametro('IVAMonto'); const paramIVALine = obtenerParametro('IVALine'); const paramTotal = obtenerParametro('Total'); const subtotalLine = document.getElementById('subtotal-line'); const ivaMontoLine = document.getElementById('iva-monto-line'); const ivaPercentLine = document.getElementById('iva-percent-line'); const totalLine = document.getElementById('total-line'); const subtotalValEl = document.getElementById('subtotal'); const ivaMontoValEl = document.getElementById('ivatotal'); const ivaPercentValEl = document.getElementById('iva-percent-val'); const totalValEl = document.getElementById('total'); if (paramSubtotal !== null) { subtotalValEl.textContent = paramSubtotal; subtotalLine.style.display = 'flex'; } else { subtotalLine.style.display = 'none'; } if (paramIVAMonto !== null) { ivaMontoValEl.textContent = paramIVAMonto; ivaMontoLine.style.display = 'flex'; } else { ivaMontoLine.style.display = 'none'; } if (paramIVALine !== null) { ivaPercentValEl.textContent = paramIVALine; ivaPercentLine.style.display = 'flex'; } else { ivaPercentLine.style.display = 'none'; } if (paramTotal !== null) { totalValEl.textContent = paramTotal; totalLine.style.display = 'flex'; } else { totalValEl.textContent = `$${sumaColumnaMonto.toFixed(2)}`; totalLine.style.display = 'flex'; }
 
   } // Fin de generarYActualizarFactura
 
   // --- Lógica para Compartir (Sin cambios) ---
   // ... (código idéntico de compartir) ...
   const shareButton = document.getElementById('shareButton'); const invoiceContainer = document.getElementById('invoice-container'); const statusMessage = document.getElementById('status-message'); if (shareButton && invoiceContainer && statusMessage) { shareButton.addEventListener('click', async () => { statusMessage.textContent = 'Generando imagen...'; shareButton.disabled = true; try { const canvasOptions = { scale: 2, useCORS: true, backgroundColor: '#ffffff', width: invoiceContainer.offsetWidth, windowWidth: invoiceContainer.offsetWidth }; const canvas = await html2canvas(invoiceContainer, canvasOptions); canvas.toBlob(async (blob) => { if (!blob) throw new Error("No se pudo crear el Blob."); const fileName = `factura-${Date.now()}.png`; const imageFile = new File([blob], fileName, { type: 'image/png' }); if (navigator.share && navigator.canShare && navigator.canShare({ files: [imageFile] })) { statusMessage.textContent = 'Abriendo diálogo para compartir...'; try { await navigator.share({ files: [imageFile], title: 'Factura Generada', text: 'Adjunto la factura generada.' }); statusMessage.textContent = '¡Compartido exitosamente!'; } catch (err) { statusMessage.textContent = err.name === 'AbortError' ? 'Compartir cancelado.' : `Error al compartir: ${err.message}`; if (err.name !== 'AbortError') console.error('Error al compartir:', err); } } else { statusMessage.textContent = 'Compartir no soportado, descargando imagen...'; const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = fileName; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(link.href); statusMessage.textContent = 'Imagen descargada.'; } }, 'image/png'); } catch (error) { console.error('Error al generar la imagen:', error); statusMessage.textContent = `Error al generar imagen: ${error.message}`; } finally { setTimeout(() => { shareButton.disabled = false; }, 1000); } }); } else { console.error("Faltan elementos para la funcionalidad de compartir."); }
-
 
   // Ejecutar al cargar
   window.onload = () => {
