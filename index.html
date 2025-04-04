@@ -2,246 +2,214 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Factura Dinámica Tailwind - Para Impresión y Compartir</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Importante para móvil -->
+    <title>Factura Dinámica Tailwind - Contenido Dinámico v2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Incluir html2canvas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
-        /* --- Estilos Base (Pantalla y Print) --- */
+        /* --- Estilos (sin cambios) --- */
         td { padding: 0.2rem 0.4rem; overflow-wrap: break-word; word-wrap: break-word; hyphens: auto; word-break: break-all; font-size: 0.55rem; vertical-align: top; }
         th { padding-bottom: 0.5rem; font-size: 0.75rem; font-weight: 500; vertical-align: bottom; }
         .align-left { text-align: left; }
         .align-right { text-align: right; }
         .th-align-left { text-align: left; }
         .th-align-right { text-align: right; }
-
-        /* --- Estilos Específicos para Impresión --- */
+        .logo-hidden { display: none !important; }
+        .section-hidden { display: none !important; }
         @media print {
             body { margin: 0 !important; padding: 0 !important; background-color: white !important; min-width: initial !important; }
             body > *:not(#invoice-container) { display: none !important; }
-            #invoice-container { margin: 0 !important; padding: 0.5rem !important; border: none !important; box-shadow: none !important; width: 80mm !important; position: absolute !important; left: 0 !important; top: 0 !important; background-color: white !important; /* Fondo blanco explícito para captura */}
+            #invoice-container { margin: 0 !important; padding: 0.5rem !important; border: none !important; box-shadow: none !important; width: 80mm !important; position: absolute !important; left: 0 !important; top: 0 !important; background-color: white !important; }
             table, thead, tbody, tr, th, td { border-collapse: collapse !important; border-spacing: 0 !important; }
             tr { border: none !important; }
-            /* Ocultar el botón al imprimir */
             #share-button-container { display: none !important; }
+            #subtotal-line, #iva-monto-line, #iva-percent-line, #total-line { display: flex !important; }
         }
-
-        /* Estilos para el botón y mensajes */
         #share-button-container { margin-top: 1rem; text-align: center; }
-        #status-message { margin-top: 0.5rem; font-size: 0.8rem; color: #555; min-height: 1.2em; } /* Espacio para mensaje */
-
+        #status-message { margin-top: 0.5rem; font-size: 0.8rem; color: #555; min-height: 1.2em; }
+        #subtotal-line, #iva-monto-line, #iva-percent-line { display: none; }
     </style>
 </head>
 <body>
 
-<!-- Contenedor de la factura -->
+<!--
+    Lista de Parámetros Esperados en la URL:
+
+    1.  `columna`: Encabezados tabla. Ej: columna=Producto&columna=Monto
+    2.  Parámetros con nombre de columna: Datos filas (coma sep.). Ej: Producto=A,B&Monto=10,20
+    3.  `Subtotal` (opcional): Valor subtotal. Ej: Subtotal=$30.00
+    4.  `IVAMonto` (opcional): Valor monto IVA. Ej: IVAMonto=$3.60
+    5.  `IVALine` (opcional): Texto línea IVA (%). Ej: IVALine=12%
+    6.  `Total` (opcional): Valor total. Si no, calcula sumando 'Monto'. Ej: Total=$33.60
+    7.  `Logo1` (opcional): URL logo izquierdo. (!= '' para mostrar, '' o ausente para ocultar/default).
+    8.  `Logo2` (opcional): URL logo derecho. (!= '' para mostrar, '' o ausente para ocultar).
+    9.  `Factura` (opcional): Texto para la línea de Factura. Si es vacío, oculta la línea.
+    10. `Fecha` (opcional): Texto para la línea de Fecha. Si es vacío, oculta la línea.
+    11. `Hora` (opcional): Texto para la línea de Hora. Si es vacío, oculta la línea.
+    12. `Para` (opcional): Contenido sección "Para:". Si es vacío, oculta sección. (%0A para saltos).
+    13. `De` (opcional): Contenido sección "De:". Si es vacío, oculta sección. (%0A para saltos).
+    14. `Nota` (opcional): Contenido sección "Nota:". Si es vacío, oculta sección. (%0A para saltos).
+    Otros posibles: vence...
+-->
+
 <div id="invoice-container" class="w-[80mm] bg-white p-6 mx-auto my-4 border shadow-lg">
-    <!-- Contenido de la factura (igual que antes) -->
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-2">
-            <!-- 
-            <img src="sinapsis LOGO 3  svglkl.svg" alt="Logo" width="40" height="40" style="aspect-ratio: 50 / 40; object-fit: cover;" class="rounded-full"/>
-        -->
+            <img id="invoice-logo" src="sinapsis LOGO 3  svglkl.svg" alt="Logo Principal" width="40" height="40" style="aspect-ratio: 50 / 40; object-fit: cover;" class="rounded-full"/>
+            <img id="invoice-logo-2" src="" alt="Logo Secundario" width="80" height="40" style="object-fit: cover;" class="logo-hidden"/>
         </div>
         <div class="text-right text-sm text-muted-foreground">
-            <p id="factura">Factura #123</p>
-            <p id="fecha">Fecha: 2023-10-27</p>
-            <p id="vence">Vence: 2023-11-26</p>
+            <!-- Línea Factura -->
+            <p id="factura-line">Factura: <span id="factura-val">#123</span></p>
+            <!-- Línea Fecha -->
+            <p id="fecha-line">Fecha: <span id="fecha-val">2023-10-27</span></p>
+            <!-- Línea Hora -->
+            <p id="hora-line">Hora: <span id="hora-val">15:30</span></p>
         </div>
     </div>
     <div class="grid grid-cols-2 gap-4 mb-6">
-        <div>
+        <!-- Sección Para -->
+        <div id="para-section">
             <h2 class="text-sm font-medium mb-1">Para:</h2>
-            <p class="text-sm text-muted-foreground" id="para">Cliente Ejemplo<br>Calle Falsa 123<br>Ciudad, País</p>
+            <p class="text-sm text-muted-foreground" id="para-val">Cliente Ejemplo<br>Calle Falsa 123<br>Ciudad, País</p>
         </div>
-        <div>
+        <!-- Sección De -->
+        <div id="de-section">
             <h2 class="text-sm font-medium mb-1">De:</h2>
-            <p class="text-sm text-muted-foreground">Acme Inc.<br>456 Oak Rd.<br>Somewhere, NY 54321<br>(555) 555-5555<br>info@acme.com</p>
+            <p class="text-sm text-muted-foreground" id="de-val">Acme Inc.<br>456 Oak Rd.<br>Somewhere, NY 54321<br>(555) 555-5555<br>info@acme.com</p>
         </div>
     </div>
-    <table id="miTabla" class="w-full mb-6">
-        <thead></thead>
-        <tbody class="text-right"></tbody>
-    </table>
+    <table id="miTabla" class="w-full mb-6"><thead></thead><tbody class="text-right"></tbody></table>
     <div class="grid grid-cols-2 gap-4 mb-6">
-        <div>
+        <!-- Sección Nota -->
+        <div id="nota-section">
             <h2 class="text-sm font-medium mb-1">Nota:</h2>
-            <p class="text-sm text-muted-foreground" id="nota">Gracias por su compra.</p>
+            <p class="text-sm text-muted-foreground" id="nota-val">Gracias por su compra.</p>
         </div>
+        <!-- Sección Totales -->
         <div class="text-right">
-            <div class="flex justify-end items-center gap-2"><p class="text-sm font-medium">Subtotal:</p><p class="text-sm text-muted-foreground" id="subtotal">$0.00</p></div>
-            <div class="flex justify-end items-center gap-2"><p class="text-sm font-medium">IVA Monto:</p><p class="text-sm text-muted-foreground" id="ivatotal">$0.00</p></div>
-            <div class="flex justify-end items-center gap-2 border-t border-muted pt-2"><p class="text-sm font-medium">Total:</p><p class="text-sm font-bold" id="total">$0.00</p></div>
+            <div id="subtotal-line" class="flex justify-end items-center gap-2"><p class="text-sm font-medium">Subtotal:</p><p class="text-sm text-muted-foreground" id="subtotal"></p></div>
+            <div id="iva-percent-line" class="flex justify-end items-center gap-2"><p class="text-sm font-medium">IVA:</p><p class="text-sm text-muted-foreground" id="iva-percent-val"></p></div>
+            <div id="iva-monto-line" class="flex justify-end items-center gap-2"><p class="text-sm font-medium">IVA Monto:</p><p class="text-sm text-muted-foreground" id="ivatotal"></p></div>
+            <div id="total-line" class="flex justify-end items-center gap-2 border-t border-muted pt-2"><p class="text-sm font-medium">Total:</p><p class="text-sm font-bold" id="total"></p></div>
         </div>
     </div>
 </div> <!-- Fin de #invoice-container -->
 
-<!-- Contenedor del Botón (fuera del div de la factura) -->
+<!-- Contenedor del Botón -->
 <div id="share-button-container" class="w-[80mm] mx-auto text-center py-4">
     <button id="shareButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out">
         Compartir Factura como Imagen
     </button>
-    <div id="status-message"></div> <!-- Para mostrar mensajes al usuario -->
+    <div id="status-message"></div>
 </div>
 
 <script>
-  // Función para generar la tabla (igual que antes)
-  function generarTablaDesdeURL() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const columnas = urlParams.getAll('columna');
+  function obtenerParametro(nombre) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(nombre);
+  }
+
+  // Helper para actualizar texto o ocultar contenedor
+  function actualizarContenidoOSeccion(paramValue, valueElement, containerElement, labelPrefix = "") {
+      if (paramValue !== null) { // Parámetro existe
+          const trimmedValue = paramValue.trim();
+          if (trimmedValue === "") { // Vacío -> Ocultar contenedor
+              if (containerElement) containerElement.classList.add('section-hidden');
+              else if (valueElement) valueElement.classList.add('section-hidden');
+          } else { // Con valor -> Actualizar y mostrar
+              if (valueElement) {
+                   // Usar textContent es más seguro si no esperas HTML en el parámetro
+                  valueElement.textContent = labelPrefix + trimmedValue;
+                  // Alternativa si necesitas <br> (ej, para 'Para', 'De', 'Nota'):
+                  // valueElement.innerHTML = labelPrefix + trimmedValue.replace(/\\n/g, '<br>').replace(/%0A/g, '<br>');
+                   valueElement.classList.remove('section-hidden');
+              }
+              if (containerElement) containerElement.classList.remove('section-hidden');
+          }
+      } else { // Parámetro no existe -> Asegurar visibilidad (para default)
+           if (valueElement) valueElement.classList.remove('section-hidden');
+           if (containerElement) containerElement.classList.remove('section-hidden');
+      }
+  }
+
+
+  function generarYActualizarFactura() {
+    // --- 0. Obtener elementos básicos ---
+    const columnas = new URLSearchParams(window.location.search).getAll('columna');
     const tabla = document.getElementById('miTabla');
+    const logo1ImgElement = document.getElementById('invoice-logo');
+    const logo2ImgElement = document.getElementById('invoice-logo-2');
+    // Elementos de texto/sección
+    const facturaLineEl = document.getElementById('factura-line');
+    const facturaValEl = document.getElementById('factura-val');
+    const fechaLineEl = document.getElementById('fecha-line'); // <-- Nuevo
+    const fechaValEl = document.getElementById('fecha-val');   // <-- Nuevo
+    const horaLineEl = document.getElementById('hora-line');
+    const horaValEl = document.getElementById('hora-val');
+    const paraSectionEl = document.getElementById('para-section');
+    const paraValEl = document.getElementById('para-val');
+    const deSectionEl = document.getElementById('de-section');
+    const deValEl = document.getElementById('de-val');
+    const notaSectionEl = document.getElementById('nota-section');
+    const notaValEl = document.getElementById('nota-val');
+
+    // --- Validaciones iniciales ---
     if (!tabla) { console.error("Tabla no encontrada"); return; }
     const encabezadoContainer = tabla.querySelector('thead');
     const cuerpoContainer = tabla.querySelector('tbody');
     if (!encabezadoContainer || !cuerpoContainer) { console.error("Thead o Tbody no encontrado"); return; }
+    // ... (Advertencias si faltan otros elementos) ...
+    if (!fechaLineEl) console.warn("Elemento fecha-line no encontrado.");
 
+
+    // --- A. Actualizar Logos ---
+    // ... (lógica logo 1 sin cambios) ...
+    const paramLogo1 = obtenerParametro('Logo1');
+    if (logo1ImgElement) { if (paramLogo1 !== null) { const logo1Src = paramLogo1.trim(); if (logo1Src === "") { logo1ImgElement.classList.add('logo-hidden'); logo1ImgElement.alt = "Logo 1 oculto"; logo1ImgElement.src = ""; } else { logo1ImgElement.src = logo1Src; logo1ImgElement.classList.remove('logo-hidden'); logo1ImgElement.alt = "Logo Principal"; } } else { logo1ImgElement.classList.remove('logo-hidden'); logo1ImgElement.alt = "Logo Principal por defecto"; } }
+    // ... (lógica logo 2 sin cambios) ...
+    const paramLogo2 = obtenerParametro('Logo2');
+    if (logo2ImgElement) { const logo2Src = paramLogo2 ? paramLogo2.trim() : null; if (logo2Src) { logo2ImgElement.src = logo2Src; logo2ImgElement.classList.remove('logo-hidden'); logo2ImgElement.alt = "Logo Secundario"; } else { logo2ImgElement.classList.add('logo-hidden'); logo2ImgElement.alt = "Logo 2 no proporcionado u oculto"; logo2ImgElement.src = ""; } }
+
+    // --- B. Actualizar Contenido de Texto/Secciones ---
+    const paramFactura = obtenerParametro('Factura');
+    const paramFecha = obtenerParametro('Fecha'); // <-- Nuevo
+    const paramHora = obtenerParametro('Hora');
+    const paramPara = obtenerParametro('Para');
+    const paramDe = obtenerParametro('De');
+    const paramNota = obtenerParametro('Nota');
+
+    // Usar el helper para cada uno
+    actualizarContenidoOSeccion(paramFactura, facturaValEl, facturaLineEl); // Sin prefijo, ya está en HTML
+    actualizarContenidoOSeccion(paramFecha, fechaValEl, fechaLineEl);     // <-- Nuevo (Sin prefijo)
+    actualizarContenidoOSeccion(paramHora, horaValEl, horaLineEl);         // Sin prefijo
+    // Para 'Para', 'De', 'Nota' - usar innerHTML si se esperan <br> de %0A
+    actualizarContenidoOSeccion(paramPara, paraValEl, paraSectionEl); // Modifica paraValEl si necesitas <br>
+    actualizarContenidoOSeccion(paramDe, deValEl, deSectionEl);     // Modifica deValEl si necesitas <br>
+    actualizarContenidoOSeccion(paramNota, notaValEl, notaSectionEl);   // Modifica notaValEl si necesitas <br>
+
+    // --- 1. Limpiar Tabla ---
     encabezadoContainer.innerHTML = '';
     cuerpoContainer.innerHTML = '';
 
-    if (columnas.length === 0) {
-        cuerpoContainer.innerHTML = '<tr><td colspan="1" class="text-center py-4">No hay columnas definidas.</td></tr>';
-        return;
-    }
+    // --- Resto de la lógica (Tabla, Totales) sin cambios ---
+    // ... (código idéntico para columnas, filas, totales) ...
+     if (columnas.length === 0) { /* ... */ cuerpoContainer.innerHTML = '<tr><td colspan="1" class="text-center py-4">No hay columnas definidas.</td></tr>'; document.getElementById('subtotal-line').style.display = 'none'; document.getElementById('iva-monto-line').style.display = 'none'; document.getElementById('iva-percent-line').style.display = 'none'; document.getElementById('total-line').style.display = 'none'; return; }
+     const filaEncabezado = document.createElement('tr'); filaEncabezado.classList.add('border-b', 'border-gray-300'); columnas.forEach(nombreColumna => { const th = document.createElement('th'); th.textContent = nombreColumna; th.classList.add(['Cantidad', 'Precio', 'Monto', 'IVA', 'Subtotal', 'Total'].includes(nombreColumna) ? 'th-align-right' : 'th-align-left'); filaEncabezado.appendChild(th); }); encabezadoContainer.appendChild(filaEncabezado);
+    const datosPorColumna = {}; let numeroFilas = 0; columnas.forEach((nombreColumna, index) => { const datosString = obtenerParametro(nombreColumna); datosPorColumna[nombreColumna] = datosString ? datosString.split(',') : []; if (index === 0) numeroFilas = datosPorColumna[nombreColumna].length; });
+     if (numeroFilas === 0 && columnas.length > 0) { /* ... */ cuerpoContainer.innerHTML = `<tr><td colspan="${columnas.length}" class="text-center py-4">No hay datos para mostrar.</td></tr>`; document.getElementById('subtotal-line').style.display = 'none'; document.getElementById('iva-monto-line').style.display = 'none'; document.getElementById('iva-percent-line').style.display = 'none'; document.getElementById('total-line').style.display = 'none'; return; }
+     let sumaColumnaMonto = 0; for (let i = 0; i < numeroFilas; i++) { const filaCuerpo = document.createElement('tr'); columnas.forEach(nombreColumna => { const td = document.createElement('td'); const datoCelda = datosPorColumna[nombreColumna]?.[i] ?? ''; td.textContent = datoCelda; if (nombreColumna.toLowerCase() === 'monto') { const valorNumerico = parseFloat(String(datoCelda).replace(/[^0-9.-]+/g,"")); if (!isNaN(valorNumerico)) { sumaColumnaMonto += valorNumerico; } else { console.warn(`Valor no numérico en Monto, fila ${i}: ${datoCelda}`); } } td.classList.add(['Cantidad', 'Precio', 'Monto', 'IVA', 'Subtotal', 'Total'].includes(nombreColumna) ? 'align-right' : 'align-left'); filaCuerpo.appendChild(td); }); cuerpoContainer.appendChild(filaCuerpo); }
+    const paramSubtotal = obtenerParametro('Subtotal'); const paramIVAMonto = obtenerParametro('IVAMonto'); const paramIVALine = obtenerParametro('IVALine'); const paramTotal = obtenerParametro('Total'); const subtotalLine = document.getElementById('subtotal-line'); const ivaMontoLine = document.getElementById('iva-monto-line'); const ivaPercentLine = document.getElementById('iva-percent-line'); const totalLine = document.getElementById('total-line'); const subtotalValEl = document.getElementById('subtotal'); const ivaMontoValEl = document.getElementById('ivatotal'); const ivaPercentValEl = document.getElementById('iva-percent-val'); const totalValEl = document.getElementById('total'); if (paramSubtotal !== null) { subtotalValEl.textContent = paramSubtotal; subtotalLine.style.display = 'flex'; } else { subtotalLine.style.display = 'none'; } if (paramIVAMonto !== null) { ivaMontoValEl.textContent = paramIVAMonto; ivaMontoLine.style.display = 'flex'; } else { ivaMontoLine.style.display = 'none'; } if (paramIVALine !== null) { ivaPercentValEl.textContent = paramIVALine; ivaPercentLine.style.display = 'flex'; } else { ivaPercentLine.style.display = 'none'; } if (paramTotal !== null) { totalValEl.textContent = paramTotal; totalLine.style.display = 'flex'; } else { totalValEl.textContent = `$${sumaColumnaMonto.toFixed(2)}`; totalLine.style.display = 'flex'; }
 
-    const filaEncabezado = document.createElement('tr');
-    filaEncabezado.classList.add('border-b', 'border-gray-300');
-    columnas.forEach(nombreColumna => {
-      const th = document.createElement('th');
-      th.textContent = nombreColumna;
-      th.classList.add(['Cantidad', 'Precio', 'Monto', 'IVA', 'Subtotal', 'Total'].includes(nombreColumna) ? 'th-align-right' : 'th-align-left');
-      filaEncabezado.appendChild(th);
-    });
-    encabezadoContainer.appendChild(filaEncabezado);
+  } // Fin de generarYActualizarFactura
 
-    const datosPorColumna = {};
-    let numeroFilas = 0;
-    columnas.forEach((nombreColumna, index) => {
-        const datosString = urlParams.get(nombreColumna);
-        datosPorColumna[nombreColumna] = datosString ? datosString.split(',') : [];
-        if (index === 0) numeroFilas = datosPorColumna[nombreColumna].length;
-        // Aquí podrías añadir validación de longitud si quieres
-    });
+  // --- Lógica para Compartir (Sin cambios) ---
+  // ... (código idéntico de compartir) ...
+  const shareButton = document.getElementById('shareButton'); const invoiceContainer = document.getElementById('invoice-container'); const statusMessage = document.getElementById('status-message'); if (shareButton && invoiceContainer && statusMessage) { shareButton.addEventListener('click', async () => { statusMessage.textContent = 'Generando imagen...'; shareButton.disabled = true; try { const canvasOptions = { scale: 2, useCORS: true, backgroundColor: '#ffffff', width: invoiceContainer.offsetWidth, windowWidth: invoiceContainer.offsetWidth }; const canvas = await html2canvas(invoiceContainer, canvasOptions); canvas.toBlob(async (blob) => { if (!blob) throw new Error("No se pudo crear el Blob."); const fileName = `factura-${Date.now()}.png`; const imageFile = new File([blob], fileName, { type: 'image/png' }); if (navigator.share && navigator.canShare && navigator.canShare({ files: [imageFile] })) { statusMessage.textContent = 'Abriendo diálogo para compartir...'; try { await navigator.share({ files: [imageFile], title: 'Factura Generada', text: 'Adjunto la factura generada.' }); statusMessage.textContent = '¡Compartido exitosamente!'; } catch (err) { statusMessage.textContent = err.name === 'AbortError' ? 'Compartir cancelado.' : `Error al compartir: ${err.message}`; if (err.name !== 'AbortError') console.error('Error al compartir:', err); } } else { statusMessage.textContent = 'Compartir no soportado, descargando imagen...'; const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = fileName; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(link.href); statusMessage.textContent = 'Imagen descargada.'; } }, 'image/png'); } catch (error) { console.error('Error al generar la imagen:', error); statusMessage.textContent = `Error al generar imagen: ${error.message}`; } finally { setTimeout(() => { shareButton.disabled = false; }, 1000); } }); } else { console.error("Faltan elementos para la funcionalidad de compartir."); }
 
-     if (numeroFilas === 0 && columnas.length > 0) {
-        cuerpoContainer.innerHTML = `<tr><td colspan="${columnas.length}" class="text-center py-4">No hay datos para mostrar.</td></tr>`;
-        return;
-     }
-
-    let subtotalCalculado = 0;
-    for (let i = 0; i < numeroFilas; i++) {
-      const filaCuerpo = document.createElement('tr');
-      columnas.forEach(nombreColumna => {
-        const td = document.createElement('td');
-        const datoCelda = datosPorColumna[nombreColumna]?.[i] ?? '';
-        td.textContent = datoCelda;
-        if (nombreColumna === 'Monto') {
-            const valorMonto = parseFloat(datoCelda.replace(/[^0-9.-]+/g,""));
-             if (!isNaN(valorMonto)) subtotalCalculado += valorMonto;
-        }
-        td.classList.add(['Cantidad', 'Precio', 'Monto', 'IVA', 'Subtotal', 'Total'].includes(nombreColumna) ? 'align-right' : 'align-left');
-        filaCuerpo.appendChild(td);
-      });
-      cuerpoContainer.appendChild(filaCuerpo);
-    }
-
-    // Actualizar totales (ejemplo básico)
-    const elSubtotal = document.getElementById('subtotal');
-    const elTotal = document.getElementById('total');
-    if (elSubtotal) elSubtotal.textContent = `$${subtotalCalculado.toFixed(2)}`;
-    // Aquí la lógica de IVA y Total...
-    if (elTotal) elTotal.textContent = `$${(subtotalCalculado * 1.12).toFixed(2)}`; // Ejemplo 12% IVA
-  }
-
-  // --- Lógica para Compartir ---
-  const shareButton = document.getElementById('shareButton');
-  const invoiceContainer = document.getElementById('invoice-container');
-  const statusMessage = document.getElementById('status-message');
-
-  if (shareButton && invoiceContainer && statusMessage) {
-    shareButton.addEventListener('click', async () => {
-      statusMessage.textContent = 'Generando imagen...'; // Feedback inicial
-      shareButton.disabled = true; // Deshabilitar botón mientras procesa
-
-      try {
-        // Opciones para html2canvas (puedes ajustar scale para mejor resolución)
-        const canvasOptions = {
-            scale: 2, // Captura a 2x resolución para mayor nitidez
-            useCORS: true, // Necesario si la imagen del logo viene de otro dominio
-            backgroundColor: '#ffffff', // Asegura fondo blanco
-             // Intentar que use el ancho fijo, no el automático del navegador
-             width: invoiceContainer.offsetWidth,
-             windowWidth: invoiceContainer.offsetWidth, // Forzar ancho
-        };
-
-        const canvas = await html2canvas(invoiceContainer, canvasOptions);
-
-        // Convertir Canvas a Blob
-        canvas.toBlob(async (blob) => {
-          if (!blob) {
-              throw new Error("No se pudo crear el Blob de la imagen.");
-          }
-
-          // Crear objeto File desde el Blob
-          const fileName = `factura-${Date.now()}.png`; // Nombre de archivo único
-          const imageFile = new File([blob], fileName, { type: 'image/png' });
-
-          // Comprobar si Web Share API (para archivos) está disponible
-          if (navigator.share && navigator.canShare && navigator.canShare({ files: [imageFile] })) {
-            statusMessage.textContent = 'Abriendo diálogo para compartir...';
-            try {
-              await navigator.share({
-                files: [imageFile],
-                title: 'Factura Generada', // Título opcional
-                text: 'Adjunto la factura generada.', // Texto opcional
-              });
-              statusMessage.textContent = '¡Compartido exitosamente!';
-            } catch (err) {
-              if (err.name !== 'AbortError') { // Ignorar si el usuario cancela
-                console.error('Error al compartir:', err);
-                statusMessage.textContent = `Error al compartir: ${err.message}`;
-              } else {
-                 statusMessage.textContent = 'Compartir cancelado.';
-              }
-            }
-          } else {
-            // Fallback: Ofrecer descarga si Web Share no está disponible o no soporta archivos
-            statusMessage.textContent = 'Compartir no soportado, descargando imagen...';
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob); // Crear URL temporal para el Blob
-            link.download = fileName;
-            document.body.appendChild(link); // Necesario para Firefox
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href); // Liberar memoria
-             statusMessage.textContent = 'Imagen descargada.';
-          }
-        }, 'image/png'); // Especifica el tipo de imagen
-
-      } catch (error) {
-        console.error('Error al generar la imagen:', error);
-        statusMessage.textContent = `Error al generar imagen: ${error.message}`;
-      } finally {
-        // Habilitar el botón de nuevo después de un breve retraso
-         setTimeout(() => {
-            shareButton.disabled = false;
-            // Opcional: limpiar el mensaje después de un tiempo
-            // setTimeout(() => { statusMessage.textContent = ''; }, 5000);
-         }, 1000);
-      }
-    });
-  } else {
-      console.error("No se encontró el botón de compartir, el contenedor de factura o el área de mensajes.");
-  }
-
-  // Ejecutar la generación de la tabla al cargar
+  // Ejecutar al cargar
   window.onload = () => {
-      generarTablaDesdeURL();
-      // Opcional: Ocultar el botón si Web Share no está disponible en absoluto
-      // if (!navigator.share) {
-      //    const btnContainer = document.getElementById('share-button-container');
-      //    if(btnContainer) btnContainer.style.display = 'none';
-      // }
+      generarYActualizarFactura();
   };
 
 </script>
