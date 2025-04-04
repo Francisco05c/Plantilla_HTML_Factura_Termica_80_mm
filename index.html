@@ -20,7 +20,6 @@
         .section-hidden {
              visibility: hidden !important; /* <-- CAMBIO AQUÍ */
         }
-
         /* --- Estilos Específicos para Impresión --- */
         @media print {
             body { margin: 0 !important; padding: 0 !important; background-color: white !important; min-width: initial !important; }
@@ -29,12 +28,10 @@
             table, thead, tbody, tr, th, td { border-collapse: collapse !important; border-spacing: 0 !important; }
             tr { border: none !important; }
             #share-button-container { display: none !important; }
-            #subtotal-line, #iva-monto-line, #iva-percent-line, #total-line { display: flex !important; }
-             /* .section-hidden con visibility:hidden funciona bien en print */
+            /* ELIMINA O COMENTA LA SIGUIENTE LÍNEA: */
+            /* #subtotal-line, #iva-monto-line, #iva-percent-line, #total-line { display: flex !important; } */
+            /* .section-hidden con visibility:hidden funciona bien en print */
         }
-        #share-button-container { margin-top: 1rem; text-align: center; }
-        #status-message { margin-top: 0.5rem; font-size: 0.8rem; color: #555; min-height: 1.2em; }
-        #subtotal-line, #iva-monto-line, #iva-percent-line { display: none; } /* display:none está bien para estas líneas individuales */
     </style>
 </head>
 <body>
@@ -49,7 +46,7 @@
     <div class="flex items-center justify-between mb-6">
          <!-- Logos -->
         <div class="flex items-center gap-2">
-            <img id="invoice-logo" src="https://media.discordapp.net/attachments/925921694332375073/1357606947247099955/unnamed.jpg?ex=67f0d17f&is=67ef7fff&hm=0cf14b620bc479a02e77dedec0f8168fe5eebbdaa43fab09f5e0efc0d324310e&=&format=webp&width=593&height=578" alt="Logo Principal" width="40" height="40" style="aspect-ratio: 50 / 40; object-fit: cover;" class="rounded-full"/>
+            <img id="invoice-logo" src="sinapsis LOGO 3  svglkl.svg" alt="Logo Principal" width="40" height="40" style="aspect-ratio: 50 / 40; object-fit: cover;" class="rounded-full"/>
             <img id="invoice-logo-2" src="" alt="Logo Secundario" width="80" height="40" style="object-fit: cover;" class="logo-hidden"/>
         </div>
         <!-- Info Derecha -->
